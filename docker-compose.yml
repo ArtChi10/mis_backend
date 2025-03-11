@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  db:
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U mis_user -d mis_db" ]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: mis_db
+      POSTGRES_USER: mis_user
+      POSTGRES_PASSWORD: mis_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: mis_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgres://mis_user:mis_password@db:5432/mis_db"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+volumes:
+  postgres_data:
